@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#4f46e5" />
+  <title>Débours — Notes de frais</title>
+
+  <!-- PWA / iOS -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Débours" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Supabase JS (v2) via CDN : aucun build nécessaire -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Configuration (tes clés Supabase) -->
+  <script src="js/config.js"></script>
+</head>
+<body>
+
+  <!-- ÉCRAN DE CONNEXION -->
+  <section id="auth-screen" class="screen hidden">
+    <div class="auth-card">
+      <div class="brand">
+        <span class="brand-logo">€</span>
+        <h1>Débours</h1>
+      </div>
+      <p class="auth-subtitle">Tes notes de frais, synchronisées partout.</p>
+
+      <form id="auth-form" autocomplete="on">
+        <label>
+          Email
+          <input type="email" id="auth-email" required placeholder="toi@exemple.com" autocomplete="email" />
+        </label>
+        <label>
+          Mot de passe
+          <input type="password" id="auth-password" required minlength="6" placeholder="••••••••" autocomplete="current-password" />
+        </label>
+        <p id="auth-error" class="error hidden"></p>
+        <button type="submit" id="auth-submit" class="btn btn-primary">Se connecter</button>
+      </form>
+
+      <p class="auth-switch">
+        <span id="auth-switch-text">Pas encore de compte ?</span>
+        <button type="button" id="auth-toggle" class="link">Créer un compte</button>
+      </p>
+    </div>
+  </section>
+
+  <!-- ÉCRAN PRINCIPAL -->
+  <section id="app-screen" class="screen hidden">
+    <header class="app-header">
+      <div class="app-header-top">
+        <h1>Débours</h1>
+        <div class="header-user">
+          <span id="user-email" class="user-email"></span>
+          <button id="logout-btn" class="btn-icon" title="Se déconnecter" aria-label="Se déconnecter">⏻</button>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="summary-card">
+          <span class="summary-label">Total</span>
+          <span class="summary-value" id="sum-total">0,00 €</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">À valider</span>
+          <span class="summary-value" id="sum-pending">0,00 €</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Remboursé</span>
+          <span class="summary-value" id="sum-paid">0,00 €</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="filters">
+        <select id="filter-statut" class="filter-select">
+          <option value="">Tous les statuts</option>
+          <option value="a_valider">À valider</option>
+          <option value="valide">Validé</option>
+          <option value="rembourse">Remboursé</option>
+        </select>
+        <select id="filter-categorie" class="filter-select">
+          <option value="">Toutes catégories</option>
+          <option value="repas">Repas</option>
+          <option value="transport">Transport</option>
+          <option value="hebergement">Hébergement</option>
+          <option value="fournitures">Fournitures</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+
+      <ul id="expense-list" class="expense-list"></ul>
+      <p id="empty-state" class="empty-state hidden">Aucune dépense pour le moment.<br/>Appuie sur « + » pour en ajouter une.</p>
+    </main>
+
+    <button id="add-btn" class="fab" aria-label="Ajouter une dépense">+</button>
+  </section>
+
+  <!-- FORMULAIRE (modale) -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 id="modal-title">Nouvelle dépense</h2>
+      <form id="expense-form">
+        <input type="hidden" id="expense-id" />
+        <label>
+          Montant (€)
+          <input type="number" id="f-montant" step="0.01" min="0" required inputmode="decimal" placeholder="0,00" />
+        </label>
+        <label>
+          Date
+          <input type="date" id="f-date" required />
+        </label>
+        <label>
+          Catégorie
+          <select id="f-categorie" required>
+            <option value="repas">Repas</option>
+            <option value="transport">Transport</option>
+            <option value="hebergement">Hébergement</option>
+            <option value="fournitures">Fournitures</option>
+            <option value="autre">Autre</option>
+          </select>
+        </label>
+        <label>
+          Description
+          <input type="text" id="f-description" placeholder="Ex : Déjeuner client" maxlength="200" />
+        </label>
+        <label>
+          Statut
+          <select id="f-statut" required>
+            <option value="a_valider">À valider</option>
+            <option value="valide">Validé</option>
+            <option value="rembourse">Remboursé</option>
+          </select>
+        </label>
+        <p id="form-error" class="error hidden"></p>
+        <div class="modal-actions">
+          <button type="button" id="delete-btn" class="btn btn-danger hidden">Supprimer</button>
+          <button type="button" id="cancel-btn" class="btn btn-ghost">Annuler</button>
+          <button type="submit" id="save-btn" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bannière de configuration manquante -->
+  <div id="config-banner" class="config-banner hidden">
+    ⚠️ Supabase n'est pas encore configuré. Renseigne tes clés dans <code>js/config.js</code>.
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

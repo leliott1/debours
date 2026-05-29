@@ -19,9 +19,12 @@
 
   const els = {
     authScreen: $("#auth-screen"), appScreen: $("#app-screen"), configBanner: $("#config-banner"),
+    recoveryScreen: $("#recovery-screen"), recoveryForm: $("#recovery-form"),
+    recoveryPassword: $("#recovery-password"), recoveryError: $("#recovery-error"),
     authForm: $("#auth-form"), authEmail: $("#auth-email"), authPassword: $("#auth-password"),
-    authSubmit: $("#auth-submit"), authError: $("#auth-error"), authToggle: $("#auth-toggle"),
-    authSwitchText: $("#auth-switch-text"),
+    authSubmit: $("#auth-submit"), authError: $("#auth-error"), authInfo: $("#auth-info"),
+    authToggle: $("#auth-toggle"), authSwitchText: $("#auth-switch-text"),
+    authForgot: $("#auth-forgot"), authMagic: $("#auth-magic"),
     userEmail: $("#user-email"), logoutBtn: $("#logout-btn"),
     prevMonth: $("#prev-month"), nextMonth: $("#next-month"), monthPicker: $("#month-picker"),
     sumTotal: $("#sum-total"), sumTva: $("#sum-tva"), sumCount: $("#sum-count"),
@@ -47,8 +50,12 @@
   }
 
   // ---------- Authentification ----------
-  const showAuthError = (m) => { els.authError.textContent = m; els.authError.classList.remove("hidden"); };
-  const clearAuthError = () => els.authError.classList.add("hidden");
+  const showAuthError = (m) => { els.authError.textContent = m; els.authError.classList.remove("hidden"); els.authInfo.classList.add("hidden"); };
+  const showAuthInfo = (m) => { els.authInfo.textContent = m; els.authInfo.classList.remove("hidden"); els.authError.classList.add("hidden"); };
+  const clearAuthError = () => { els.authError.classList.add("hidden"); els.authInfo.classList.add("hidden"); };
+
+  // URL de retour pour les emails (réinitialisation / lien magique)
+  const APP_URL = location.origin + location.pathname;
 
   els.authToggle.addEventListener("click", () => {
     isSignup = !isSignup;
@@ -84,6 +91,40 @@
   });
 
   els.logoutBtn.addEventListener("click", () => sb.auth.signOut());
+
+  // Mot de passe oublié → email de réinitialisation
+  els.authForgot.addEventListener("click", async () => {
+    clearAuthError();
+    const email = els.authEmail.value.trim();
+    if (!email) { showAuthError("Saisis d'abord ton email ci-dessus, puis retouche « Mot de passe oublié »."); return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: APP_URL });
+    if (error) showAuthError(translateError(error.message));
+    else showAuthInfo("📧 Email envoyé à " + email + ". Clique le lien pour choisir un nouveau mot de passe.");
+  });
+
+  // Connexion par lien magique (sans mot de passe)
+  els.authMagic.addEventListener("click", async () => {
+    clearAuthError();
+    const email = els.authEmail.value.trim();
+    if (!email) { showAuthError("Saisis d'abord ton email ci-dessus, puis touche « Recevoir un lien »."); return; }
+    els.authMagic.disabled = true;
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: APP_URL } });
+    els.authMagic.disabled = false;
+    if (error) showAuthError(translateError(error.message));
+    else showAuthInfo("✉️ Lien de connexion envoyé à " + email + ". Ouvre ton email et clique le lien.");
+  });
+
+  // Définir un nouveau mot de passe (après clic sur le lien de réinitialisation)
+  els.recoveryForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    els.recoveryError.classList.add("hidden");
+    const { error } = await sb.auth.updateUser({ password: els.recoveryPassword.value });
+    if (error) { els.recoveryError.textContent = translateError(error.message); els.recoveryError.classList.remove("hidden"); return; }
+    els.recoveryScreen.classList.add("hidden");
+    // la session est déjà active → on bascule sur l'app
+    const { data } = await sb.auth.getSession();
+    if (data.session) showApp(data.session);
+  });
 
   function translateError(msg) {
     const m = (msg || "").toLowerCase();
@@ -299,6 +340,7 @@
   // ---------- Navigation écrans ----------
   function showApp(session) {
     els.authScreen.classList.add("hidden");
+    els.recoveryScreen.classList.add("hidden");
     els.appScreen.classList.remove("hidden");
     els.userEmail.textContent = session.user.email;
     if (!currentMonth) setMonth(new Date().toISOString().slice(0, 7));
@@ -306,8 +348,14 @@
   }
   function showAuth() {
     els.appScreen.classList.add("hidden");
+    els.recoveryScreen.classList.add("hidden");
     els.authScreen.classList.remove("hidden");
     expenses = [];
+  }
+  function showRecovery() {
+    els.appScreen.classList.add("hidden");
+    els.authScreen.classList.add("hidden");
+    els.recoveryScreen.classList.remove("hidden");
   }
 
   // ---------- Init ----------
@@ -319,7 +367,10 @@
       return;
     }
     sb = window.supabase.createClient(window.APP_CONFIG.SUPABASE_URL, window.APP_CONFIG.SUPABASE_ANON_KEY);
-    sb.auth.onAuthStateChange((_e, session) => { if (session) showApp(session); else showAuth(); });
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") { showRecovery(); return; }
+      if (session) showApp(session); else showAuth();
+    });
     const { data } = await sb.auth.getSession();
     if (data.session) showApp(data.session); else showAuth();
   }

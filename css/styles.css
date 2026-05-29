@@ -87,6 +87,11 @@ input, select {
 }
 input:focus, select:focus { outline: 2px solid var(--indigo); border-color: var(--indigo); }
 .error { color: var(--danger); font-size: 14px; font-weight: 600; }
+.info { color: var(--green); font-size: 14px; font-weight: 600; }
+.link.small { font-size: 13px; font-weight: 600; align-self: center; margin-top: 2px; }
+.btn-block { width: 100%; }
+.auth-sep { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 16px 0; }
+.auth-sep::before, .auth-sep::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
 /* ---------- En-tête appli ---------- */
 .app-header {

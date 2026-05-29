@@ -42,13 +42,36 @@
           <input type="password" id="auth-password" required minlength="6" placeholder="••••••••" autocomplete="current-password" />
         </label>
         <p id="auth-error" class="error hidden"></p>
+        <p id="auth-info" class="info hidden"></p>
         <button type="submit" id="auth-submit" class="btn btn-primary">Se connecter</button>
+        <button type="button" id="auth-forgot" class="link small">Mot de passe oublié ?</button>
       </form>
+
+      <div class="auth-sep"><span>ou</span></div>
+      <button type="button" id="auth-magic" class="btn btn-ghost btn-block">✉️ Recevoir un lien de connexion</button>
 
       <p class="auth-switch">
         <span id="auth-switch-text">Pas encore de compte ?</span>
         <button type="button" id="auth-toggle" class="link">Créer un compte</button>
       </p>
+    </div>
+  </section>
+
+  <!-- ÉCRAN : DÉFINIR UN NOUVEAU MOT DE PASSE (après lien de réinitialisation) -->
+  <section id="recovery-screen" class="screen hidden">
+    <div class="auth-card">
+      <div class="brand">
+        <span class="brand-logo">€</span>
+        <h1>Nouveau mot de passe</h1>
+      </div>
+      <p class="auth-subtitle">Choisis un nouveau mot de passe pour ton compte.</p>
+      <form id="recovery-form">
+        <label>Nouveau mot de passe
+          <input type="password" id="recovery-password" required minlength="6" placeholder="••••••••" autocomplete="new-password" />
+        </label>
+        <p id="recovery-error" class="error hidden"></p>
+        <button type="submit" class="btn btn-primary">Enregistrer le mot de passe</button>
+      </form>
     </div>
   </section>
 

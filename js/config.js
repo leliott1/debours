@@ -1,14 +1,13 @@
-// ⚙️  Configuration Supabase
+// ⚙️  Configuration de l'application
 // ------------------------------------------------------------------
-// Remplace les deux valeurs ci-dessous par celles de TON projet.
-// Tu les trouves dans Supabase : Project Settings → API
-//   • SUPABASE_URL      = "Project URL"
-//   • SUPABASE_ANON_KEY = "anon" / "public" (la clé publique, pas la "service_role")
-//
-// Ces clés sont publiques par nature : la sécurité est assurée côté
-// base de données par les règles RLS (voir supabase/setup.sql).
+// Clés Supabase : Project Settings → API (clé "anon" / "publishable").
+// Elles sont publiques par nature (sécurité assurée par les règles RLS).
 // ------------------------------------------------------------------
 window.APP_CONFIG = {
   SUPABASE_URL: "https://ffkdwiufoufyyclxqeew.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_fClICnBVCZxgAvKvzv8JTw_N0Zu9RLE",
+
+  // Infos reprises en en-tête de l'export Excel pour la compta
+  SOCIETE: "ATELIER JEAN LOUP BOUVIER, 9 RUE DU PONANT, 30133 LES ANGLES",
+  SALARIE: "LAYOUNI ELIOTT",
 };

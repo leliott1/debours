@@ -136,11 +136,30 @@ input:focus, select:focus { outline: 2px solid var(--indigo); border-color: var(
 
 .badge {
   display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px;
-  border-radius: 999px; margin-top: 4px;
+  border-radius: 999px; margin-top: 4px; background: #eef2ff; color: var(--indigo);
 }
-.badge-a_valider { background: #fef3c7; color: var(--amber); }
-.badge-valide { background: #dbeafe; color: var(--indigo); }
-.badge-rembourse { background: #dcfce7; color: var(--green); }
+
+/* Barre de sélection du mois */
+.month-bar { display: flex; align-items: center; gap: 10px; margin-top: 16px; justify-content: center; }
+.month-picker {
+  background: rgba(255,255,255,0.18); border: none; color: #fff; font-weight: 600;
+  text-align: center; border-radius: 12px; padding: 8px 12px; width: auto;
+  color-scheme: dark;
+}
+.month-bar .btn-icon { font-size: 22px; line-height: 1; }
+
+/* Bouton export */
+.btn-export {
+  width: 100%; background: #fff; color: var(--indigo); border: 2px solid var(--indigo);
+  margin-bottom: 16px;
+}
+.btn-export:hover { background: #eef2ff; }
+
+/* Formulaire */
+.form-row { display: flex; gap: 12px; }
+.form-row label { flex: 1; }
+.hint { font-size: 13px; color: var(--muted); margin: -4px 0 4px; }
+.hint span { font-weight: 700; color: var(--text); }
 
 .empty-state { text-align: center; color: var(--muted); margin-top: 60px; line-height: 1.6; }
 

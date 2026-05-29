@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#4f46e5" />
-  <title>Débours — Notes de frais</title>
+  <title>Débours — Frais de déplacement</title>
 
   <!-- PWA / iOS -->
   <link rel="manifest" href="manifest.webmanifest" />
@@ -16,9 +16,11 @@
 
   <link rel="stylesheet" href="css/styles.css" />
 
-  <!-- Supabase JS (v2) via CDN : aucun build nécessaire -->
+  <!-- Supabase JS (v2) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Configuration (tes clés Supabase) -->
+  <!-- SheetJS : génération du fichier Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Configuration -->
   <script src="js/config.js"></script>
 </head>
 <body>
@@ -30,15 +32,13 @@
         <span class="brand-logo">€</span>
         <h1>Débours</h1>
       </div>
-      <p class="auth-subtitle">Tes notes de frais, synchronisées partout.</p>
+      <p class="auth-subtitle">Tes frais de déplacement, synchronisés partout.</p>
 
       <form id="auth-form" autocomplete="on">
-        <label>
-          Email
+        <label>Email
           <input type="email" id="auth-email" required placeholder="toi@exemple.com" autocomplete="email" />
         </label>
-        <label>
-          Mot de passe
+        <label>Mot de passe
           <input type="password" id="auth-password" required minlength="6" placeholder="••••••••" autocomplete="current-password" />
         </label>
         <p id="auth-error" class="error hidden"></p>
@@ -63,42 +63,32 @@
         </div>
       </div>
 
+      <div class="month-bar">
+        <button id="prev-month" class="btn-icon" aria-label="Mois précédent">‹</button>
+        <input type="month" id="month-picker" class="month-picker" />
+        <button id="next-month" class="btn-icon" aria-label="Mois suivant">›</button>
+      </div>
+
       <div class="summary">
         <div class="summary-card">
-          <span class="summary-label">Total</span>
+          <span class="summary-label">Total du mois</span>
           <span class="summary-value" id="sum-total">0,00 €</span>
         </div>
         <div class="summary-card">
-          <span class="summary-label">À valider</span>
-          <span class="summary-value" id="sum-pending">0,00 €</span>
+          <span class="summary-label">Dont TVA</span>
+          <span class="summary-value" id="sum-tva">0,00 €</span>
         </div>
         <div class="summary-card">
-          <span class="summary-label">Remboursé</span>
-          <span class="summary-value" id="sum-paid">0,00 €</span>
+          <span class="summary-label">Lignes</span>
+          <span class="summary-value" id="sum-count">0</span>
         </div>
       </div>
     </header>
 
     <main class="content">
-      <div class="filters">
-        <select id="filter-statut" class="filter-select">
-          <option value="">Tous les statuts</option>
-          <option value="a_valider">À valider</option>
-          <option value="valide">Validé</option>
-          <option value="rembourse">Remboursé</option>
-        </select>
-        <select id="filter-categorie" class="filter-select">
-          <option value="">Toutes catégories</option>
-          <option value="repas">Repas</option>
-          <option value="transport">Transport</option>
-          <option value="hebergement">Hébergement</option>
-          <option value="fournitures">Fournitures</option>
-          <option value="autre">Autre</option>
-        </select>
-      </div>
-
+      <button id="export-btn" class="btn btn-export">📊 Exporter le mois en Excel</button>
       <ul id="expense-list" class="expense-list"></ul>
-      <p id="empty-state" class="empty-state hidden">Aucune dépense pour le moment.<br/>Appuie sur « + » pour en ajouter une.</p>
+      <p id="empty-state" class="empty-state hidden">Aucune dépense ce mois-ci.<br/>Appuie sur « + » pour en ajouter une.</p>
     </main>
 
     <button id="add-btn" class="fab" aria-label="Ajouter une dépense">+</button>
@@ -112,35 +102,32 @@
       <h2 id="modal-title">Nouvelle dépense</h2>
       <form id="expense-form">
         <input type="hidden" id="expense-id" />
-        <label>
-          Montant (€)
-          <input type="number" id="f-montant" step="0.01" min="0" required inputmode="decimal" placeholder="0,00" />
-        </label>
-        <label>
-          Date
+        <label>Date
           <input type="date" id="f-date" required />
         </label>
-        <label>
-          Catégorie
+        <label>Fournisseur
+          <input type="text" id="f-fournisseur" placeholder="Ex : SNCF, RATP, L'outillage Chazaud" maxlength="120" />
+        </label>
+        <label>Catégorie
           <select id="f-categorie" required>
-            <option value="repas">Repas</option>
-            <option value="transport">Transport</option>
-            <option value="hebergement">Hébergement</option>
-            <option value="fournitures">Fournitures</option>
-            <option value="autre">Autre</option>
+            <option value="train_sncf">Train SNCF</option>
+            <option value="peage">Péage</option>
+            <option value="carburant">Carburant</option>
+            <option value="fournitures">Fournitures / Matériel chantier</option>
+            <option value="divers">Divers (RATP…)</option>
           </select>
         </label>
-        <label>
-          Description
-          <input type="text" id="f-description" placeholder="Ex : Déjeuner client" maxlength="200" />
-        </label>
-        <label>
-          Statut
-          <select id="f-statut" required>
-            <option value="a_valider">À valider</option>
-            <option value="valide">Validé</option>
-            <option value="rembourse">Remboursé</option>
-          </select>
+        <div class="form-row">
+          <label>Montant total payé (TTC)
+            <input type="number" id="f-ttc" step="0.01" min="0" required inputmode="decimal" placeholder="0,00" />
+          </label>
+          <label>Dont TVA (€)
+            <input type="number" id="f-tva" step="0.01" min="0" inputmode="decimal" placeholder="0,00" />
+          </label>
+        </div>
+        <p class="hint">HT calculé : <span id="f-ht">0,00 €</span></p>
+        <label>Chantier
+          <input type="text" id="f-chantier" placeholder="Ex : Paris Grand Palais – Chantier 3 Lot 32" maxlength="200" />
         </label>
         <p id="form-error" class="error hidden"></p>
         <div class="modal-actions">
@@ -154,7 +141,7 @@
 
   <!-- Bannière de configuration manquante -->
   <div id="config-banner" class="config-banner hidden">
-    ⚠️ Supabase n'est pas encore configuré. Renseigne tes clés dans <code>js/config.js</code>.
+    ⚠️ Supabase n'est pas configuré. Renseigne tes clés dans <code>js/config.js</code>.
   </div>
 
   <script src="js/app.js"></script>

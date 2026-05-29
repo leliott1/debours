@@ -45,6 +45,12 @@ Voir `supabase/setup.sql`. Colonnes : `date`, `fournisseur`, `chantier`,
 
 ## ✅ Fait (Partie 1)
 - Auth Supabase (création de compte + connexion) — écran violet, logo €.
+- **Récupération d'accès** : « Mot de passe oublié » (reset email) + **connexion par lien
+  magique** (`signInWithOtp`) + écran « nouveau mot de passe » (event PASSWORD_RECOVERY).
+  ⚠️ Nécessite que la **URL Configuration** Supabase pointe vers l'app :
+  Authentication → URL Configuration → Site URL = `https://leliott1.github.io/debours/`
+  et Redirect URLs incluant `https://leliott1.github.io/debours/**`. Sinon les liens
+  des emails renvoient vers localhost et échouent.
 - Saisie d'une dépense au format compta (fournisseur, chantier, catégorie, TTC, TVA).
 - Vue **par mois** (navigation ‹ ›) + totaux du mois.
 - **Export `.xlsx`** reproduisant le tableau (en-tête société/salarié, ligne TOTAL).

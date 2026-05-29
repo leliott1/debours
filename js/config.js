@@ -9,6 +9,6 @@
 // base de données par les règles RLS (voir supabase/setup.sql).
 // ------------------------------------------------------------------
 window.APP_CONFIG = {
-  SUPABASE_URL: "https://TON-PROJET.supabase.co",
-  SUPABASE_ANON_KEY: "TA_CLE_ANON_PUBLIC",
+  SUPABASE_URL: "https://ffkdwiufoufyyclxqeew.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_fClICnBVCZxgAvKvzv8JTw_N0Zu9RLE",
 };

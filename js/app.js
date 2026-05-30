@@ -24,7 +24,7 @@
     authForm: $("#auth-form"), authEmail: $("#auth-email"), authPassword: $("#auth-password"),
     authSubmit: $("#auth-submit"), authError: $("#auth-error"), authInfo: $("#auth-info"),
     authToggle: $("#auth-toggle"), authSwitchText: $("#auth-switch-text"),
-    authForgot: $("#auth-forgot"), authMagic: $("#auth-magic"),
+    authForgot: $("#auth-forgot"),
     userEmail: $("#user-email"), logoutBtn: $("#logout-btn"),
     prevMonth: $("#prev-month"), nextMonth: $("#next-month"), monthPicker: $("#month-picker"),
     sumTotal: $("#sum-total"), sumTva: $("#sum-tva"), sumCount: $("#sum-count"),
@@ -42,6 +42,8 @@
   let isSignup = false;
   let expenses = [];          // dépenses du mois courant
   let currentMonth = "";      // "YYYY-MM"
+  // L'utilisateur arrive-t-il via un lien de réinitialisation de mot de passe ?
+  let inRecovery = location.hash.includes("type=recovery");
 
   function isConfigured() {
     const c = window.APP_CONFIG || {};
@@ -96,32 +98,23 @@
   els.authForgot.addEventListener("click", async () => {
     clearAuthError();
     const email = els.authEmail.value.trim();
-    if (!email) { showAuthError("Saisis d'abord ton email ci-dessus, puis retouche « Mot de passe oublié »."); return; }
+    if (!email) { showAuthError("Saisis d'abord ton email ci-dessus, puis reclique sur « Mot de passe oublié »."); return; }
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: APP_URL });
     if (error) showAuthError(translateError(error.message));
     else showAuthInfo("📧 Email envoyé à " + email + ". Clique le lien pour choisir un nouveau mot de passe.");
-  });
-
-  // Connexion par lien magique (sans mot de passe)
-  els.authMagic.addEventListener("click", async () => {
-    clearAuthError();
-    const email = els.authEmail.value.trim();
-    if (!email) { showAuthError("Saisis d'abord ton email ci-dessus, puis touche « Recevoir un lien »."); return; }
-    els.authMagic.disabled = true;
-    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: APP_URL } });
-    els.authMagic.disabled = false;
-    if (error) showAuthError(translateError(error.message));
-    else showAuthInfo("✉️ Lien de connexion envoyé à " + email + ". Ouvre ton email et clique le lien.");
   });
 
   // Définir un nouveau mot de passe (après clic sur le lien de réinitialisation)
   els.recoveryForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     els.recoveryError.classList.add("hidden");
-    const { error } = await sb.auth.updateUser({ password: els.recoveryPassword.value });
+    const pwd = els.recoveryPassword.value;
+    if (pwd.length < 6) { els.recoveryError.textContent = "6 caractères minimum."; els.recoveryError.classList.remove("hidden"); return; }
+    const { error } = await sb.auth.updateUser({ password: pwd });
     if (error) { els.recoveryError.textContent = translateError(error.message); els.recoveryError.classList.remove("hidden"); return; }
+    inRecovery = false;
     els.recoveryScreen.classList.add("hidden");
-    // la session est déjà active → on bascule sur l'app
+    // la session est déjà active → on entre dans l'app
     const { data } = await sb.auth.getSession();
     if (data.session) showApp(data.session);
   });
@@ -368,11 +361,17 @@
     }
     sb = window.supabase.createClient(window.APP_CONFIG.SUPABASE_URL, window.APP_CONFIG.SUPABASE_ANON_KEY);
     sb.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") { showRecovery(); return; }
+      // Lien de réinitialisation cliqué : on FORCE l'écran "nouveau mot de passe",
+      // même si une session vient d'être ouverte.
+      if (event === "PASSWORD_RECOVERY") { inRecovery = true; showRecovery(); return; }
+      if (inRecovery) { showRecovery(); return; }
       if (session) showApp(session); else showAuth();
     });
     const { data } = await sb.auth.getSession();
-    if (data.session) showApp(data.session); else showAuth();
+    // Si on arrive par un lien de récupération, on impose l'écran "nouveau mot de passe".
+    if (inRecovery) showRecovery();
+    else if (data.session) showApp(data.session);
+    else showAuth();
   }
 
   if ("serviceWorker" in navigator) {

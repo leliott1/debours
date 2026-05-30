@@ -36,6 +36,7 @@
     fTva: $("#f-tva"), fHt: $("#f-ht"), fChantier: $("#f-chantier"),
     formError: $("#form-error"), deleteBtn: $("#delete-btn"), cancelBtn: $("#cancel-btn"),
     saveBtn: $("#save-btn"),
+    scanBtn: $("#scan-btn"), scanInput: $("#scan-input"), scanStatus: $("#scan-status"),
   };
 
   let sb = null;
@@ -282,6 +283,75 @@
     closeModal();
     loadExpenses();
   });
+
+  // ---------- Scan d'un ticket (photo → pré-remplissage via Gemini) ----------
+  const setScan = (msg, cls) => {
+    els.scanStatus.textContent = msg;
+    els.scanStatus.className = "scan-status" + (cls ? " " + cls : "");
+    els.scanStatus.classList.toggle("hidden", !msg);
+  };
+
+  els.scanBtn.addEventListener("click", () => els.scanInput.click());
+
+  els.scanInput.addEventListener("change", async () => {
+    const file = els.scanInput.files && els.scanInput.files[0];
+    els.scanInput.value = ""; // permet de re-sélectionner le même fichier
+    if (!file) return;
+    els.scanBtn.disabled = true;
+    setScan("🔎 Analyse du ticket en cours…", "working");
+    try {
+      const image = await fileToResizedDataUrl(file, 1600);
+      const { data, error } = await sb.functions.invoke("extract-ticket", {
+        body: { image, mimeType: "image/jpeg" },
+      });
+      if (error) throw new Error(error.message || "Échec de l'analyse.");
+      if (data && data.error) throw new Error(data.error);
+      applyExtraction(data || {});
+      setScan("✅ Ticket lu ! Vérifie les champs puis enregistre.", "ok");
+    } catch (e) {
+      setScan("⚠️ " + (e.message || "Lecture impossible. Saisis à la main."), "ko");
+    } finally {
+      els.scanBtn.disabled = false;
+    }
+  });
+
+  // Remplit le formulaire à partir des données extraites
+  function applyExtraction(d) {
+    if (d.date && /^\d{4}-\d{2}-\d{2}$/.test(d.date)) els.fDate.value = d.date;
+    if (d.fournisseur) els.fFournisseur.value = d.fournisseur;
+    if (d.categorie && CATEGORIES[d.categorie]) els.fCategorie.value = d.categorie;
+    if (d.montant_ttc != null && !isNaN(Number(d.montant_ttc)) && Number(d.montant_ttc) > 0)
+      els.fTtc.value = Number(d.montant_ttc);
+    if (d.tva != null && !isNaN(Number(d.tva)) && Number(d.tva) > 0)
+      els.fTva.value = Number(d.tva);
+    recomputeHt();
+  }
+
+  // Lit un fichier image, le redimensionne (max `maxPx`) et renvoie un dataURL JPEG
+  function fileToResizedDataUrl(file, maxPx) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Image illisible."));
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxPx || height > maxPx) {
+            const r = Math.min(maxPx / width, maxPx / height);
+            width = Math.round(width * r);
+            height = Math.round(height * r);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width; canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
   // ---------- Export Excel (format compta) ----------
   els.exportBtn.addEventListener("click", () => {

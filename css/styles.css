@@ -160,6 +160,17 @@ input:focus, select:focus { outline: 2px solid var(--indigo); border-color: var(
 }
 .btn-export:hover { background: #eef2ff; }
 
+/* Bouton scan ticket */
+.btn-scan {
+  width: 100%; background: linear-gradient(160deg, var(--indigo), var(--violet));
+  color: #fff; margin-bottom: 12px;
+}
+.btn-scan:disabled { opacity: 0.6; }
+.scan-status { font-size: 14px; font-weight: 600; margin-bottom: 12px; text-align: center; }
+.scan-status.working { color: var(--indigo); }
+.scan-status.ok { color: var(--green); }
+.scan-status.ko { color: var(--danger); }
+
 /* Formulaire */
 .form-row { display: flex; gap: 12px; }
 .form-row label { flex: 1; }

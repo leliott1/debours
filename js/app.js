@@ -370,16 +370,24 @@
     els.scanInput.value = ""; // permet de re-sélectionner le même fichier
     if (!file) return;
     els.scanBtn.disabled = true;
-    setScan("🔎 Analyse du ticket en cours…", "working");
+    setScan("🔎 Analyse du document en cours…", "working");
     try {
-      const image = await fileToResizedDataUrl(file, 1600);
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+      let image, mimeType;
+      if (isPdf) {
+        image = await fileToDataUrl(file);   // PDF envoyé tel quel
+        mimeType = "application/pdf";
+      } else {
+        image = await fileToResizedDataUrl(file, 1600); // image redimensionnée
+        mimeType = "image/jpeg";
+      }
       const { data, error } = await sb.functions.invoke("extract-ticket", {
-        body: { image, mimeType: "image/jpeg" },
+        body: { image, mimeType },
       });
       if (error) throw new Error(error.message || "Échec de l'analyse.");
       if (data && data.error) throw new Error(data.error);
       applyExtraction(data || {});
-      setScan("✅ Ticket lu ! Vérifie les champs puis enregistre.", "ok");
+      setScan("✅ Document lu ! Vérifie les champs puis enregistre.", "ok");
     } catch (e) {
       setScan("⚠️ " + (e.message || "Lecture impossible. Saisis à la main."), "ko");
     } finally {
@@ -397,6 +405,16 @@
     if (d.tva != null && !isNaN(Number(d.tva)) && Number(d.tva) > 0)
       els.fTva.value = Number(d.tva);
     recomputeHt();
+  }
+
+  // Lit un fichier tel quel et renvoie son dataURL (utilisé pour les PDF)
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
   }
 
   // Lit un fichier image, le redimensionne (max `maxPx`) et renvoie un dataURL JPEG

@@ -273,6 +273,7 @@
 
   function openModal(e) {
     els.formError.classList.add("hidden");
+    setScan("", "");
     if (e) {
       els.modalTitle.textContent = "Modifier la dépense";
       els.fId.value = e.id;
@@ -281,12 +282,13 @@
       els.fCategorie.value = e.categorie;
       els.fTtc.value = e.montant_ttc;
       els.fTva.value = e.tva || "";
-      els.fChantier.value = e.chantier || "";
+      fillChantierSelect(e.chantier || "");
       els.deleteBtn.classList.remove("hidden");
     } else {
       els.modalTitle.textContent = "Nouvelle dépense";
       els.form.reset();
       els.fId.value = "";
+      fillChantierSelect("");
       // date par défaut : aujourd'hui si dans le mois affiché, sinon le 1er du mois
       const today = new Date().toISOString().slice(0, 10);
       els.fDate.value = today.startsWith(currentMonth) ? today : currentMonth + "-01";
@@ -294,6 +296,20 @@
     }
     recomputeHt();
     els.modal.classList.remove("hidden");
+  }
+
+  // Remplit la liste déroulante des chantiers (en gardant la valeur déjà saisie)
+  function fillChantierSelect(ensureValue) {
+    const sel = els.fChantier;
+    sel.innerHTML = '<option value="">— Aucun —</option>';
+    const noms = chantiers.map((c) => c.nom);
+    if (ensureValue && !noms.includes(ensureValue)) noms.push(ensureValue);
+    for (const nom of noms) {
+      const o = document.createElement("option");
+      o.value = nom; o.textContent = nom;
+      sel.appendChild(o);
+    }
+    sel.value = ensureValue || "";
   }
   const closeModal = () => els.modal.classList.add("hidden");
 

@@ -44,13 +44,18 @@ Voir `supabase/setup.sql`. Colonnes : `date`, `fournisseur`, `chantier`,
   Fournitures-Matériel chantier / Divers : RATP).
 
 ## ✅ Fait (Partie 1)
-- Auth Supabase (création de compte + connexion) — écran violet, logo €.
-- **Récupération d'accès** : « Mot de passe oublié » (reset email) + **connexion par lien
-  magique** (`signInWithOtp`) + écran « nouveau mot de passe » (event PASSWORD_RECOVERY).
+- Auth Supabase (création de compte + connexion par **email/mot de passe** uniquement —
+  la connexion par lien magique a été retirée à la demande de l'utilisateur).
+- **Récupération d'accès** : « Mot de passe oublié » (reset email) + écran « nouveau mot
+  de passe » qui s'impose via le flag `inRecovery` (détecte `type=recovery` dans l'URL +
+  event `PASSWORD_RECOVERY`) — sinon le lien connectait directement sans changer le mdp.
   ⚠️ Nécessite que la **URL Configuration** Supabase pointe vers l'app :
   Authentication → URL Configuration → Site URL = `https://leliott1.github.io/debours/`
-  et Redirect URLs incluant `https://leliott1.github.io/debours/**`. Sinon les liens
-  des emails renvoient vers localhost et échouent.
+  et Redirect URLs incluant `https://leliott1.github.io/debours/**`. (FAIT.)
+- **Confirmation email DÉSACTIVÉE** (Auth → Providers → Email → « Confirm email » décoché,
+  `mailer_autoconfirm=true`) : création de compte instantanée, pas d'email requis. C'est
+  ce qui a débloqué l'auth (avant : compte « inactif » + plafond d'envoi d'emails atteint
+  `over_email_send_rate_limit` à force de tester « mot de passe oublié »).
 - Saisie d'une dépense au format compta (fournisseur, chantier, catégorie, TTC, TVA).
 - Vue **par mois** (navigation ‹ ›) + totaux du mois.
 - **Export `.xlsx`** reproduisant le tableau (en-tête société/salarié, ligne TOTAL).

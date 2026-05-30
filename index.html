@@ -79,6 +79,7 @@
         <h1>Débours</h1>
         <div class="header-user">
           <span id="user-email" class="user-email"></span>
+          <button id="chantiers-btn" class="btn-icon" title="Gérer les chantiers" aria-label="Gérer les chantiers">🏗️</button>
           <button id="logout-btn" class="btn-icon" title="Se déconnecter" aria-label="Se déconnecter">⏻</button>
         </div>
       </div>
@@ -153,7 +154,9 @@
         </div>
         <p class="hint">HT calculé : <span id="f-ht">0,00 €</span></p>
         <label>Chantier
-          <input type="text" id="f-chantier" placeholder="Ex : Paris Grand Palais – Chantier 3 Lot 32" maxlength="200" />
+          <select id="f-chantier">
+            <option value="">— Aucun —</option>
+          </select>
         </label>
         <p id="form-error" class="error hidden"></p>
         <div class="modal-actions">
@@ -162,6 +165,25 @@
           <button type="submit" id="save-btn" class="btn btn-primary">Enregistrer</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- GESTION DES CHANTIERS (modale) -->
+  <div id="chantiers-modal" class="modal hidden">
+    <div class="modal-backdrop" id="chantiers-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2>Mes chantiers</h2>
+      <form id="chantier-form" class="chantier-add">
+        <input type="text" id="chantier-nom" placeholder="Nom du nouveau chantier" maxlength="200" required />
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </form>
+      <p id="chantier-error" class="error hidden"></p>
+      <ul id="chantiers-list" class="chantiers-list"></ul>
+      <p id="chantiers-empty" class="empty-state hidden" style="margin-top:20px;">Aucun chantier. Ajoute-en un ci-dessus.</p>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button type="button" id="chantiers-close" class="btn btn-ghost">Fermer</button>
+      </div>
     </div>
   </div>
 

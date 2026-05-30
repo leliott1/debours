@@ -37,11 +37,17 @@
     formError: $("#form-error"), deleteBtn: $("#delete-btn"), cancelBtn: $("#cancel-btn"),
     saveBtn: $("#save-btn"),
     scanBtn: $("#scan-btn"), scanInput: $("#scan-input"), scanStatus: $("#scan-status"),
+    chantiersBtn: $("#chantiers-btn"), chantiersModal: $("#chantiers-modal"),
+    chantiersBackdrop: $("#chantiers-backdrop"), chantiersClose: $("#chantiers-close"),
+    chantierForm: $("#chantier-form"), chantierNom: $("#chantier-nom"),
+    chantierError: $("#chantier-error"), chantiersList: $("#chantiers-list"),
+    chantiersEmpty: $("#chantiers-empty"),
   };
 
   let sb = null;
   let isSignup = false;
   let expenses = [];          // dépenses du mois courant
+  let chantiers = [];         // liste des chantiers de l'utilisateur
   let currentMonth = "";      // "YYYY-MM"
   // L'utilisateur arrive-t-il via un lien de réinitialisation de mot de passe ?
   let inRecovery = location.hash.includes("type=recovery");
@@ -166,6 +172,56 @@
     expenses = data || [];
     render();
   }
+
+  // ---------- Chantiers ----------
+  async function loadChantiers() {
+    const { data, error } = await sb.from("chantiers").select("*")
+      .order("nom", { ascending: true });
+    if (error) { console.error(error); return; }
+    chantiers = data || [];
+    renderChantiers();
+  }
+
+  function renderChantiers() {
+    els.chantiersList.innerHTML = "";
+    els.chantiersEmpty.classList.toggle("hidden", chantiers.length > 0);
+    for (const c of chantiers) {
+      const li = document.createElement("li");
+      li.className = "chantier-item";
+      const nom = document.createElement("span");
+      nom.className = "nom"; nom.textContent = c.nom;
+      const del = document.createElement("button");
+      del.type = "button"; del.textContent = "Supprimer";
+      del.addEventListener("click", async () => {
+        if (!confirm("Supprimer le chantier « " + c.nom + " » ?")) return;
+        const { error } = await sb.from("chantiers").delete().eq("id", c.id);
+        if (error) { alert("Erreur : " + error.message); return; }
+        await loadChantiers();
+      });
+      li.appendChild(nom); li.appendChild(del);
+      els.chantiersList.appendChild(li);
+    }
+  }
+
+  const openChantiers = () => { els.chantierError.classList.add("hidden"); renderChantiers(); els.chantiersModal.classList.remove("hidden"); };
+  const closeChantiers = () => els.chantiersModal.classList.add("hidden");
+  els.chantiersBtn.addEventListener("click", openChantiers);
+  els.chantiersClose.addEventListener("click", closeChantiers);
+  els.chantiersBackdrop.addEventListener("click", closeChantiers);
+
+  els.chantierForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    els.chantierError.classList.add("hidden");
+    const nom = els.chantierNom.value.trim();
+    if (!nom) return;
+    if (chantiers.some((c) => c.nom.toLowerCase() === nom.toLowerCase())) {
+      els.chantierError.textContent = "Ce chantier existe déjà."; els.chantierError.classList.remove("hidden"); return;
+    }
+    const { error } = await sb.from("chantiers").insert({ nom });
+    if (error) { els.chantierError.textContent = "Erreur : " + error.message; els.chantierError.classList.remove("hidden"); return; }
+    els.chantierNom.value = "";
+    await loadChantiers();
+  });
   const saveExpense = (payload, id) =>
     id ? sb.from("depenses").update(payload).eq("id", id) : sb.from("depenses").insert(payload);
   const deleteExpense = (id) => sb.from("depenses").delete().eq("id", id);
@@ -406,6 +462,7 @@
     els.recoveryScreen.classList.add("hidden");
     els.appScreen.classList.remove("hidden");
     els.userEmail.textContent = session.user.email;
+    loadChantiers();
     if (!currentMonth) setMonth(new Date().toISOString().slice(0, 7));
     else loadExpenses();
   }

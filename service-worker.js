@@ -1,6 +1,6 @@
 /* Service worker — met l'app en cache pour un fonctionnement hors-ligne
  * et permet l'installation sur l'écran d'accueil. */
-const CACHE = "debours-v5";
+const CACHE = "debours-v6";
 const ASSETS = [
   "./",
   "./index.html",

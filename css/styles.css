@@ -160,6 +160,17 @@ input:focus, select:focus { outline: 2px solid var(--indigo); border-color: var(
 }
 .btn-export:hover { background: #eef2ff; }
 
+/* Gestion des chantiers */
+.chantier-add { flex-direction: row; gap: 10px; margin-bottom: 8px; }
+.chantier-add input { flex: 1; }
+.chantiers-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; max-height: 50vh; overflow-y: auto; }
+.chantier-item {
+  display: flex; align-items: center; gap: 10px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+}
+.chantier-item .nom { flex: 1; font-weight: 600; }
+.chantier-item button { background: #fee2e2; color: var(--danger); border: none; border-radius: 8px; padding: 6px 10px; font-weight: 700; cursor: pointer; }
+
 /* Bouton scan ticket */
 .btn-scan {
   width: 100%; background: linear-gradient(160deg, var(--indigo), var(--violet));
